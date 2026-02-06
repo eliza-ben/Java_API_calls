@@ -1,0 +1,50 @@
+package com.example.uploadproxy.service;
+
+import com.example.uploadproxy.dto.UploadResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Service
+public class ExternalUploadService {
+
+  private static final MediaType XLSX =
+      MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+  private final WebClient webClient;
+  private final String uploadPath;
+
+  public ExternalUploadService(
+      WebClient.Builder builder,
+      @Value("${ext.base-url}") String baseUrl,
+      @Value("${ext.upload-path}") String uploadPath
+  ) {
+    this.webClient = builder.baseUrl(baseUrl).build();
+    this.uploadPath = uploadPath;
+  }
+
+  public UploadResponse uploadXlsxBytes(byte[] bytes, String bearerToken) {
+
+    // "headers as array" style (key,value,key,value...)
+    String[] headersArray = {
+        HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken,
+        HttpHeaders.CACHE_CONTROL, "no-cache",
+        HttpHeaders.ACCEPT, "application/json"
+    };
+
+    return webClient.post()
+        .uri(uploadPath)
+        .contentType(XLSX)
+        .headers(h -> {
+          for (int i = 0; i < headersArray.length; i += 2) {
+            h.add(headersArray[i], headersArray[i + 1]);
+          }
+        })
+        .bodyValue(bytes) // raw body = file bytes (matches your Postman "src: file.xlsx")
+        .retrieve()
+        .bodyToMono(UploadResponse.class)
+        .block();
+  }
+}
