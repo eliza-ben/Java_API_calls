@@ -1,0 +1,18 @@
+package com.example.uploadproxy.dto;
+
+public class UploadResponse {
+  public boolean result;
+  public boolean warning;
+
+  public String messageType;
+  public Integer errorCode;
+  public String message;
+  public String generatedId;
+
+  public Data data;
+
+  public static class Data {
+    public Long fileVersionId;
+    public String newFileName;
+  }
+}
